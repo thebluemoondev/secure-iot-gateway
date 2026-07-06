@@ -1,0 +1,7 @@
+{
+  "_comment": "Danh sach UID the NFC duoc phep ra/vao. Thay bang UID that lay tu Serial Monitor cua ESP32 (dong '[sensor] Phat hien vat can: ... | NFC: <UID>').",
+  "authorized_uids": [
+    "04A1B2C3D4",
+    "EE134002"
+  ]
+}

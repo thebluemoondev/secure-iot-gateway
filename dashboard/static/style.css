@@ -97,34 +97,93 @@ body {
   font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em;
   color: var(--text-dim); margin-bottom: 14px;
 }
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
+}
+.section-head h2 { margin-bottom: 0; }
 
-.device-grid {
+/* --- Giám sát trực tiếp -------------------------------------------------- */
+.monitor-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
 
-.device-card {
+.monitor-card {
   background: var(--card);
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
   padding: 18px;
   transition: transform 0.15s ease, border-color 0.15s ease;
 }
-.device-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+.monitor-card:hover { transform: translateY(-2px); border-color: var(--accent); }
 
-.device-card .device-id {
+.monitor-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.monitor-card .device-id {
   font-family: "Cascadia Code", "Consolas", monospace;
   font-weight: 600; font-size: 0.95rem;
 }
-.device-card .device-meta {
-  color: var(--text-dim); font-size: 0.78rem; margin-top: 2px;
+.monitor-card-meta {
+  color: var(--text-dim); font-size: 0.75rem; margin-top: 2px;
 }
-.device-card .reading {
-  margin-top: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 0.86rem;
+
+.presence-dot {
+  width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+  background: var(--text-dim); opacity: 0.4;
 }
-.reading-row { display: flex; justify-content: space-between; }
-.reading-row .k { color: var(--text-dim); }
+.presence-dot.on {
+  background: var(--amber); opacity: 1;
+  box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.6);
+  animation: pulse-amber 1.4s infinite;
+}
+@keyframes pulse-amber {
+  0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.55); }
+  70% { box-shadow: 0 0 0 7px rgba(251, 191, 36, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+}
+
+.monitor-row {
+  margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  font-size: 0.86rem;
+}
+.monitor-row .k { color: var(--text-dim); flex-shrink: 0; }
+
+.gauge { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; }
+.gauge-track {
+  width: 100px; height: 8px; border-radius: 999px; overflow: hidden;
+  background: var(--bg-alt); border: 1px solid var(--card-border);
+}
+.gauge-fill { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+.gauge-fill.near { background: var(--red); }
+.gauge-fill.far { background: var(--green); }
+.gauge-value { font-variant-numeric: tabular-nums; min-width: 58px; text-align: right; }
+
+.nfc-chip {
+  font-family: "Cascadia Code", "Consolas", monospace; font-size: 0.78rem;
+  padding: 2px 10px; border-radius: 999px;
+}
+.nfc-chip.ok { background: var(--green-bg); color: var(--green); }
+.nfc-chip.empty { background: var(--bg-alt); color: var(--text-dim); }
+
+.monitor-badges { margin-top: 14px; display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* --- Nhật ký giao dịch ---------------------------------------------------- */
+.log-toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+.log-select, .log-search {
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--card-border); border-radius: 8px;
+  padding: 7px 12px; font-size: 0.82rem; font-family: inherit;
+}
+.log-search { min-width: 240px; }
+.log-select:focus, .log-search:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.log-count { color: var(--text-dim); font-size: 0.78rem; margin: 8px 2px 0; }
+
+.txn-table tbody tr.row-nack { border-left: 3px solid var(--red); }
+.txn-table tbody tr.row-ack { border-left: 3px solid var(--green); }
+.txn-table td.mono { font-family: "Cascadia Code", "Consolas", monospace; }
 
 .badge {
   display: inline-block; padding: 3px 10px; border-radius: 999px;
@@ -138,11 +197,14 @@ body {
   background: var(--card);
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  overflow-x: auto;
+  overflow: auto;
+  max-height: 420px;
 }
 .txn-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .txn-table th, .txn-table td { text-align: left; padding: 10px 16px; white-space: nowrap; }
 .txn-table thead th {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--card);
   color: var(--text-dim); font-weight: 600; font-size: 0.72rem;
   text-transform: uppercase; letter-spacing: 0.06em;
   border-bottom: 1px solid var(--card-border);
@@ -154,3 +216,102 @@ body {
 .empty-hint code {
   background: var(--bg-alt); padding: 1px 6px; border-radius: 4px;
 }
+
+/* --- Header: badge trạng thái mã hoá + live indicator -------------------- */
+.header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.mode-badge {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.8rem; font-weight: 600;
+  border-radius: 999px; padding: 6px 14px;
+  border: 1px solid var(--card-border);
+  font-family: inherit; cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+.mode-badge:hover { transform: translateY(-1px); filter: brightness(1.08); }
+.mode-badge:active { transform: translateY(0); }
+.mode-badge.disabled { cursor: not-allowed; opacity: 0.7; }
+.mode-badge.disabled:hover { transform: none; filter: none; }
+.mode-badge small { font-weight: 500; opacity: 0.75; }
+.mode-badge.secure { background: var(--green-bg); color: var(--green); border-color: transparent; }
+.mode-badge.insecure { background: var(--red-bg); color: var(--red); border-color: transparent; }
+.mode-badge .dot { background: currentColor; box-shadow: none; animation: none; }
+.mode-badge.insecure .dot { animation: pulse-red 1.2s infinite; }
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.55); }
+  70% { box-shadow: 0 0 0 7px rgba(248, 113, 113, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
+}
+
+/* --- Tabs ------------------------------------------------------------------ */
+.tab-nav { display: flex; gap: 6px; margin-bottom: 24px; border-bottom: 1px solid var(--card-border); }
+.tab-btn {
+  background: none; border: none; cursor: pointer; font-family: inherit;
+  color: var(--text-dim); font-size: 0.88rem; font-weight: 600;
+  padding: 10px 6px; margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-panel.hidden { display: none; }
+
+/* --- Sparkline lịch sử khoảng cách ------------------------------------------ */
+.spark-wrap { width: 100px; margin-top: 4px; }
+.spark { width: 100%; height: 28px; display: block; }
+.spark-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.spark-area { fill: var(--accent); opacity: 0.12; stroke: none; }
+.spark-dot { fill: var(--accent); }
+.spark-wrap.near .spark-line, .spark-wrap.near .spark-dot { stroke: var(--red); fill: var(--red); }
+.spark-wrap.near .spark-area { fill: var(--red); }
+
+/* --- Tab Kịch bản tấn công --------------------------------------------------- */
+.reason-chip-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.reason-chip {
+  display: flex; align-items: baseline; gap: 8px;
+  background: var(--card); border: 1px solid var(--card-border);
+  border-radius: var(--radius); padding: 10px 16px;
+}
+.reason-chip-count { font-size: 1.3rem; font-weight: 700; color: var(--red); }
+.reason-chip-label { font-size: 0.8rem; color: var(--text-dim); }
+
+/* --- Banner cảnh báo đầu tab tấn công --------------------------------------- */
+.attack-banner {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  background: linear-gradient(135deg, var(--red-bg), transparent 70%);
+  border: 1px solid var(--card-border); border-left: 4px solid var(--red);
+  border-radius: var(--radius);
+  padding: 18px 20px; margin-bottom: 28px;
+}
+.attack-banner-icon { font-size: 1.8rem; flex-shrink: 0; }
+.attack-banner-body { flex: 1; min-width: 200px; }
+.attack-banner-title { margin: 0 0 4px; font-size: 1rem; text-transform: none; letter-spacing: normal; color: var(--text); }
+.attack-banner-desc { margin: 0; color: var(--text-dim); font-size: 0.82rem; }
+
+/* --- Danh sách bước (Luồng 2/3) ---------------------------------------------- */
+.step-list { list-style: none; counter-reset: step; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.step-list li { counter-increment: step; position: relative; padding-left: 38px; }
+.step-list li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: 0;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-size: 0.78rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.step-text { font-size: 0.86rem; margin-bottom: 8px; }
+.step-text code { background: var(--bg-alt); padding: 1px 6px; border-radius: 4px; font-family: "Cascadia Code", "Consolas", monospace; }
+
+.code-block { position: relative; }
+.code-block pre {
+  margin: 0; padding: 12px 14px; padding-right: 70px; border-radius: 10px;
+  background: var(--bg-alt); border: 1px solid var(--card-border);
+  overflow-x: auto; font-size: 0.78rem; line-height: 1.5;
+}
+.code-block code { font-family: "Cascadia Code", "Consolas", monospace; }
+.copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--card); border: 1px solid var(--card-border);
+  color: var(--text-dim); border-radius: 6px;
+  font-size: 0.7rem; padding: 4px 9px; cursor: pointer; font-family: inherit;
+}
+.copy-btn:hover { color: var(--text); border-color: var(--accent); }

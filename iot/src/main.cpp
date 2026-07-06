@@ -166,6 +166,16 @@ static void uploadReading(const SensorReading &reading) {
     String ackResp = readLine(client, SOCKET_RESPONSE_TIMEOUT_MS);
     Serial.printf("[net] Phan hoi tu Cloud Server: %s\n", ackResp.c_str());
 
+    StaticJsonDocument<256> ackDoc;
+    if (!deserializeJson(ackDoc, ackResp) && ackDoc["type"] == "ACK") {
+        bool accessGranted = ackDoc["access_granted"] | false;
+        if (reading.nfcDetected) {
+            Serial.println(accessGranted
+                ? "[access] THE HOP LE -> CHO VAO."
+                : "[access] THE KHONG HOP LE -> TU CHOI.");
+        }
+    }
+
     client.stop();
 }
 

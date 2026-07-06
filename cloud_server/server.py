@@ -14,6 +14,10 @@ Luồng bảo mật (mặc định, chế độ an toàn):
 Chế độ baseline (--baseline, CHỈ dùng để demo Luồng 2 - đối chứng KHÔNG bảo mật):
     Bỏ qua toàn bộ xác thực/mã hoá/toàn vẹn — nhận thẳng JSON plaintext và lưu.
     KHÔNG dùng chế độ này ngoài mục đích minh hoạ lỗ hổng trong báo cáo/demo.
+
+Chỉ cần chạy DUY NHẤT file này (`python cloud_server/server.py`) — dashboard web
+xem log/trạng thái ra vào được tự khởi động kèm theo (nền), mặc định tại cổng 5000.
+Dùng --no-dashboard nếu chỉ muốn chạy socket server.
 """
 
 from __future__ import annotations
@@ -24,11 +28,13 @@ import json
 import os
 import socketserver
 import sys
+import threading
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import crypto_utils as cu
+from access_control import AccessControl
 from device_registry import DeviceRegistry
 import storage
 
@@ -40,6 +46,22 @@ DEFAULT_LOG_DIR = ROOT / "data" / "logs"
 SOCKET_TIMEOUT_SECONDS = 15
 
 
+def _run_dashboard(host: str, port: int, keys_dir: Path, data_dir: Path, log_dir: Path,
+                    server_ctx: "ServerContext") -> None:
+    """Chạy dashboard Flask (dashboard/app.py) trong 1 luồng nền của tiến trình này."""
+    dashboard_dir = ROOT / "dashboard"
+    sys.path.insert(0, str(dashboard_dir))
+    import app as dashboard_app  # noqa: E402 (import muộn - can thiệp sys.path trước)
+
+    dashboard_app.CFG["data_dir"] = data_dir
+    dashboard_app.CFG["log_dir"] = log_dir
+    dashboard_app.CFG["devices_dir"] = keys_dir / "devices"
+    # Truyền thẳng đối tượng CTX (không phải bản sao) để nút "Tắt/Bật mã hoá" trên
+    # dashboard có thể lật cờ server_ctx.baseline và ảnh hưởng ngay tới Handler.handle().
+    dashboard_app.CFG["server_ctx"] = server_ctx
+    dashboard_app.app.run(host=host, port=port, debug=False, use_reloader=False)
+
+
 class ServerContext:
     """Trạng thái dùng chung cho mọi kết nối (nạp 1 lần khi khởi động)."""
 
@@ -47,13 +69,15 @@ class ServerContext:
         self.baseline = baseline
         self.data_dir = data_dir
         self.log_dir = log_dir
+        # Danh sách thẻ hợp lệ — dùng ở cả 2 chế độ, để Luồng 2 minh chứng được:
+        # thiếu xác thực thì quyết định "cho vào" cũng bị giả mạo theo.
+        self.access_control = AccessControl(keys_dir / "authorized_cards.json")
 
-        if not baseline:
-            self.server_private_key = cu.load_private_key(keys_dir / "server_private.pem")
-            self.registry = DeviceRegistry(keys_dir / "devices")
-        else:
-            self.server_private_key = None
-            self.registry = None
+        # Luôn nạp khoá Server + registry thiết bị (kể cả khi khởi động ở chế độ
+        # baseline) để dashboard có thể BẬT/TẮT `self.baseline` lúc đang chạy
+        # (xem /api/mode trong dashboard/app.py) mà không cần khởi động lại tiến trình.
+        self.server_private_key = cu.load_private_key(keys_dir / "server_private.pem")
+        self.registry = DeviceRegistry(keys_dir / "devices")
 
 
 CTX: ServerContext | None = None  # gán trong main()
@@ -94,11 +118,23 @@ class Handler(socketserver.StreamRequestHandler):
             return
 
         print(f"[baseline][{peer}] Nhan goi tin PLAINTEXT: {packet}")
+
+        # KHONG xac thuc chu ky/toan ven gi ca truoc khi quyet dinh cho vao —
+        # day chinh la lo hong: ke tan cong chi can doan/nghe len 1 UID roi tu khai bao
+        # "nfc_detected: true" la duoc coi nhu the that, du khong dung truoc cam bien.
+        access_granted, access_reason = CTX.access_control.evaluate(
+            bool(packet.get("nfc_detected")), str(packet.get("nfc_uid", "")))
+
         storage.save_sensor_data(CTX.data_dir, device_id, packet)
         storage.log_transaction(CTX.log_dir, device_id, "ACK", "baseline_no_verification",
-                                 extra={"raw_payload": packet})
-        self._send_json({"type": "ACK", "status": "ok"})
-        print(f"[baseline][{peer}] Da chap nhan du lieu MA KHONG XAC THUC GI (lo hong minh hoa).")
+                                 extra={"raw_payload": packet,
+                                        "access_granted": access_granted,
+                                        "access_reason": access_reason,
+                                        "nfc_uid": packet.get("nfc_uid", "")})
+        self._send_json({"type": "ACK", "status": "ok",
+                          "access_granted": access_granted, "access_reason": access_reason})
+        print(f"[baseline][{peer}] Da chap nhan du lieu MA KHONG XAC THUC GI (lo hong minh hoa). "
+              f"access_granted={access_granted} ({access_reason})")
 
     # --- Chế độ SECURE (mặc định) -----------------------------------------------
     def _handle_secure(self, peer) -> None:
@@ -177,12 +213,23 @@ class Handler(socketserver.StreamRequestHandler):
 
         payload = json.loads(plaintext.decode("utf-8"))
 
+        # Goi tin da qua xac thuc chu ky + toan ven -> nfc_uid trong payload la dang tin cay
+        # (khong the bi gia mao neu khong co khoa rieng cua thiet bi).
+        access_granted, access_reason = CTX.access_control.evaluate(
+            bool(payload.get("nfc_detected")), str(payload.get("nfc_uid", "")))
+
         CTX.registry.commit_timestamp(device_id, timestamp)
         storage.save_sensor_data(CTX.data_dir, device_id, payload)
-        storage.log_transaction(CTX.log_dir, device_id, "ACK", extra={"sensor_type": sensor_type})
+        storage.log_transaction(CTX.log_dir, device_id, "ACK",
+                                 extra={"sensor_type": sensor_type,
+                                        "access_granted": access_granted,
+                                        "access_reason": access_reason,
+                                        "nfc_uid": payload.get("nfc_uid", "")})
 
-        print(f"[secure] device={device_id}: UPLOAD hop le -> {payload}")
-        self._send_json({"type": "ACK", "status": "ok"})
+        print(f"[secure] device={device_id}: UPLOAD hop le -> {payload} "
+              f"| access_granted={access_granted} ({access_reason})")
+        self._send_json({"type": "ACK", "status": "ok",
+                          "access_granted": access_granted, "access_reason": access_reason})
 
     def _handle_download(self, requester_id: str, msg: dict) -> None:
         try:
@@ -256,6 +303,9 @@ def main() -> None:
     parser.add_argument("--log-dir", type=Path, default=DEFAULT_LOG_DIR)
     parser.add_argument("--baseline", action="store_true",
                          help="CHE DO KHONG BAO MAT — chi dung de demo Luong 2 (doi chung).")
+    parser.add_argument("--dashboard-port", type=int, default=5000)
+    parser.add_argument("--no-dashboard", action="store_true",
+                         help="Khong tu chay dashboard web, chi chay socket server.")
     args = parser.parse_args()
 
     global CTX
@@ -264,8 +314,16 @@ def main() -> None:
     mode = "BASELINE (KHONG BAO MAT - chi de demo)" if args.baseline else "SECURE"
     print(f"=== Cloud Server — che do {mode} ===")
     print(f"Lang nghe tai {args.host}:{args.port}")
-    if not args.baseline:
-        print(f"Thiet bi da dang ky: {CTX.registry.known_devices()}")
+    print(f"Thiet bi da dang ky: {CTX.registry.known_devices()}")
+
+    if not args.no_dashboard:
+        dashboard_thread = threading.Thread(
+            target=_run_dashboard,
+            args=(args.host, args.dashboard_port, args.keys_dir, args.data_dir, args.log_dir, CTX),
+            daemon=True,
+        )
+        dashboard_thread.start()
+        print(f"[dashboard] Dang chay tai http://{args.host}:{args.dashboard_port}")
 
     with ThreadingTCPServer((args.host, args.port), Handler) as server:
         try:

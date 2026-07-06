@@ -10,8 +10,8 @@
 #define DEVICE_ID "esp32-gate-001"
 
 // --- Wi-Fi -------------------------------------------------------------------
-#define WIFI_SSID     "YOUR_WIFI_SSID"
-#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+#define WIFI_SSID     "bluemoon"
+#define WIFI_PASSWORD "thanhchinh"
 
 // --- Cloud Server (Raspberry Pi 5) -------------------------------------------
 // Dùng tên miền thật khi triển khai thực tế (vd: iot.yourdomain.com).
@@ -33,8 +33,8 @@
 #define ULTRASONIC_SAMPLE_COUNT 3               // lấy trung bình N mẫu để lọc nhiễu
 
 // --- Chân cắm PN532 (NFC/RFID, chế độ I2C) ----------------------------------
-#define PIN_PN532_IRQ  15
-#define PIN_PN532_RESET 16
+#define PIN_PN532_IRQ  (-1)   // khong noi day - chi dung 4 chan I2C (VCC/GND/SDA/SCL)
+#define PIN_PN532_RESET (-1)  // khong noi day - xem mach.md muc 3
 #define PN532_READ_TIMEOUT_MS 1500  // chờ tối đa khi dò thẻ sau khi phát hiện có người
 
 // --- Chu kỳ đọc cảm biến ------------------------------------------------------

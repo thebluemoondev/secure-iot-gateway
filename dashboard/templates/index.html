@@ -16,35 +16,148 @@
           <p class="subtitle">Đề tài 10 — Giám sát ra vào bảo mật qua Cloud (AES-GCM · RSA · SHA-512)</p>
         </div>
       </div>
-      <div class="live-indicator" id="live-indicator">
-        <span class="dot"></span> Đang cập nhật trực tiếp
+      <div class="header-right">
+        <button class="mode-badge" id="mode-badge" type="button" title="Trạng thái mã hoá hiện tại của Cloud Server">
+          <span class="dot"></span> Đang kiểm tra...
+        </button>
+        <div class="live-indicator" id="live-indicator">
+          <span class="dot"></span> Đang cập nhật trực tiếp
+        </div>
       </div>
     </header>
 
-    <section class="stats-row" id="stats-row">
-      <!-- điền bằng JS -->
-    </section>
+    <nav class="tab-nav" id="tab-nav">
+      <button class="tab-btn active" data-tab="monitor">Giám sát</button>
+      <button class="tab-btn" data-tab="attack">Kịch bản tấn công</button>
+    </nav>
 
-    <section class="section">
-      <h2>Thiết bị</h2>
-      <div class="device-grid" id="device-grid">
-        <p class="empty-hint">Chưa có thiết bị nào đăng ký. Chạy <code>tools/generate_keys.py</code> trước.</p>
-      </div>
-    </section>
+    <!-- ============ TAB: Giám sát ============ -->
+    <div class="tab-panel" id="tab-monitor">
+      <section class="stats-row" id="stats-row">
+        <!-- điền bằng JS -->
+      </section>
 
-    <section class="section">
-      <h2>Giao dịch gần đây</h2>
-      <div class="txn-table-wrap">
-        <table class="txn-table">
-          <thead>
-            <tr><th>Thời gian</th><th>Thiết bị</th><th>Trạng thái</th><th>Lý do</th></tr>
-          </thead>
-          <tbody id="txn-body">
-            <tr><td colspan="4" class="empty-hint">Chưa có giao dịch nào.</td></tr>
-          </tbody>
-        </table>
+      <section class="section">
+        <h2>Giám sát trực tiếp</h2>
+        <div class="monitor-grid" id="monitor-grid">
+          <p class="empty-hint">Chưa có thiết bị nào đăng ký. Chạy <code>tools/generate_keys.py</code> trước.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>Nhật ký giao dịch</h2>
+          <div class="log-toolbar">
+            <select id="log-filter" class="log-select">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="ACK">Chỉ ACK</option>
+              <option value="NACK">Chỉ NACK</option>
+            </select>
+            <input id="log-search" class="log-search" type="text"
+                   placeholder="Tìm theo thiết bị / lý do / UID thẻ...">
+          </div>
+        </div>
+        <div class="txn-table-wrap">
+          <table class="txn-table">
+            <thead>
+              <tr>
+                <th>Thời gian</th><th>Thiết bị</th><th>Trạng thái</th>
+                <th>Lý do</th><th>UID thẻ</th><th>Ra/Vào</th>
+              </tr>
+            </thead>
+            <tbody id="txn-body">
+              <tr><td colspan="6" class="empty-hint">Chưa có giao dịch nào.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="log-count" id="log-count"></p>
+      </section>
+    </div>
+
+    <!-- ============ TAB: Kịch bản tấn công ============ -->
+    <div class="tab-panel hidden" id="tab-attack">
+      <div class="attack-banner">
+        <div class="attack-banner-icon">⚠️</div>
+        <div class="attack-banner-body">
+          <h2 class="attack-banner-title">Môi trường kiểm thử bảo mật — Luồng 2 &amp; Luồng 3</h2>
+          <p class="attack-banner-desc">Mô phỏng kịch bản đối chứng để chứng minh vai trò của lớp mã hoá/xác thực. Chỉ dùng cho mục đích demo/báo cáo.</p>
+        </div>
+        <button class="mode-badge" type="button">
+          <span class="dot"></span> Đang kiểm tra...
+        </button>
       </div>
-    </section>
+
+      <section class="section">
+        <h2>Thống kê theo lý do từ chối (NACK)</h2>
+        <div class="reason-chip-row" id="reason-chip-row">
+          <p class="empty-hint">Chưa có giao dịch NACK nào.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Luồng 2 — Baseline (không bảo mật)</h2>
+        <ol class="step-list">
+          <li>
+            <div class="step-text">Bấm nút trạng thái phía trên để <strong>tắt mã hoá</strong> — server chuyển sang chế độ <code>baseline</code> ngay lập tức, không cần khởi động lại tiến trình.</div>
+          </li>
+          <li>
+            <div class="step-text">Từ máy khác, giả vờ không có ai đi qua (che giấu xâm nhập):</div>
+            <div class="code-block">
+              <button class="copy-btn" type="button">Copy</button>
+              <pre><code>python attacker_sim/baseline_fake_packet.py --host 10.54.93.155</code></pre>
+            </div>
+          </li>
+          <li>
+            <div class="step-text">Hoặc giả mạo thẻ hợp lệ để được "cho vào" dù không có ai:</div>
+            <div class="code-block">
+              <button class="copy-btn" type="button">Copy</button>
+              <pre><code>python attacker_sim/baseline_fake_access.py --host 10.54.93.155 --uid EE134002</code></pre>
+            </div>
+          </li>
+          <li>
+            <div class="step-text">Xem kết quả ngay trong "Nhật ký sự kiện bảo mật" bên dưới. Bấm lại nút trạng thái để <strong>bật mã hoá</strong> lại sau khi demo xong.</div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="section">
+        <h2>Luồng 3 — MITM (can thiệp đường truyền)</h2>
+        <ol class="step-list">
+          <li>
+            <div class="step-text">Giữ server ở chế độ SECURE (không tắt mã hoá), chạy proxy chèn giữa ESP32 và Server:</div>
+            <div class="code-block">
+              <button class="copy-btn" type="button">Copy</button>
+              <pre><code>python attacker_sim/mitm_tamper.py --listen-port 9001 --target-host 10.54.93.155 --target-port 9000</code></pre>
+            </div>
+          </li>
+          <li>
+            <div class="step-text">Tạm trỏ <code>SERVER_HOST</code>/<code>SERVER_PORT</code> trong ESP32 sang IP máy chạy proxy + cổng <code>9001</code>, nạp lại firmware.</div>
+          </li>
+          <li>
+            <div class="step-text">Kỳ vọng: Server thật trả <strong>NACK · Dữ liệu bị sửa</strong> (chữ ký vẫn đúng nhưng nội dung đã bị can thiệp) — xem log bên dưới.</div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>Nhật ký sự kiện bảo mật (NACK / thẻ không hợp lệ / baseline)</h2>
+        </div>
+        <div class="txn-table-wrap">
+          <table class="txn-table">
+            <thead>
+              <tr>
+                <th>Thời gian</th><th>Thiết bị</th><th>Trạng thái</th>
+                <th>Lý do</th><th>UID thẻ</th><th>Ra/Vào</th>
+              </tr>
+            </thead>
+            <tbody id="attack-log-body">
+              <tr><td colspan="6" class="empty-hint">Chưa có sự kiện bảo mật nào.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   </div>
 
   <script src="{{ url_for('static', filename='app.js') }}"></script>

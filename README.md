@@ -1,5 +1,7 @@
 # Secure IoT Gateway
 
+> Đề tài 10: Authenticated IoT Cloud Ingestion
+
 Hệ thống giám sát ra vào IoT (ESP32 + PN532 + HC-SR04) gửi dữ liệu lên Cloud
 (Raspberry Pi 5) qua Socket TCP, bảo vệ bằng AES-256-GCM, RSA-1024 (chữ ký số +
 trao khoá OAEP) và SHA-512.
@@ -29,6 +31,8 @@ trao khoá OAEP) và SHA-512.
 | `tools/`            | Sinh khoá RSA, chuyển PEM → header C, sinh test report          |
 | `tests/`            | Kiểm thử tự động + test report                                |
 | `docs/`             | Ghi chú thiết kế mật mã                                       |
+| `report/`           | Báo cáo bài tập lớn đã biên dịch (PDF)                          |
+| `figures/`          | Hình ảnh minh hoạ dùng trong báo cáo                            |
 
 ## Cấu Trúc Thư Mục
 
@@ -50,7 +54,9 @@ secure-iot-gateway/
 ├── tools/
 ├── data/{samples,logs}/    # Sinh ra khi chạy
 ├── tests/
-└── docs/CRYPTO_NOTES.md
+├── docs/CRYPTO_NOTES.md
+├── report/                 # main.pdf — báo cáo bài tập lớn đã biên dịch
+└── figures/                # Hình ảnh minh hoạ dùng trong báo cáo
 ```
 
 ## Cài Đặt
