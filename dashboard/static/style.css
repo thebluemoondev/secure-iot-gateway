@@ -1,0 +1,156 @@
+:root {
+  --bg: #0b1120;
+  --bg-alt: #111a2e;
+  --card: #151f38;
+  --card-border: #223052;
+  --text: #e6ebf5;
+  --text-dim: #8b96b3;
+  --accent: #4f8bff;
+  --green: #34d399;
+  --green-bg: rgba(52, 211, 153, 0.12);
+  --red: #f87171;
+  --red-bg: rgba(248, 113, 113, 0.12);
+  --amber: #fbbf24;
+  --amber-bg: rgba(251, 191, 36, 0.12);
+  --radius: 14px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f6fb;
+    --bg-alt: #ffffff;
+    --card: #ffffff;
+    --card-border: #dde3f0;
+    --text: #101828;
+    --text-dim: #5b6478;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: radial-gradient(circle at top left, var(--bg-alt), var(--bg) 60%);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-icon { font-size: 2.2rem; }
+.brand h1 { margin: 0; font-size: 1.5rem; letter-spacing: 0.2px; }
+.subtitle { margin: 2px 0 0; color: var(--text-dim); font-size: 0.85rem; }
+
+.live-indicator {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.8rem; color: var(--text-dim);
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  padding: 6px 14px; border-radius: 999px;
+}
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
+  animation: pulse 1.6s infinite;
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+.stat-card .value { font-size: 1.8rem; font-weight: 700; }
+.stat-card .label { color: var(--text-dim); font-size: 0.8rem; margin-top: 2px; }
+.stat-card.green .value { color: var(--green); }
+.stat-card.red .value { color: var(--red); }
+
+.section { margin-bottom: 34px; }
+.section h2 {
+  font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-dim); margin-bottom: 14px;
+}
+
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.device-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 18px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.device-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+
+.device-card .device-id {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-weight: 600; font-size: 0.95rem;
+}
+.device-card .device-meta {
+  color: var(--text-dim); font-size: 0.78rem; margin-top: 2px;
+}
+.device-card .reading {
+  margin-top: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 0.86rem;
+}
+.reading-row { display: flex; justify-content: space-between; }
+.reading-row .k { color: var(--text-dim); }
+
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em;
+}
+.badge.ack { background: var(--green-bg); color: var(--green); }
+.badge.nack { background: var(--red-bg); color: var(--red); }
+.badge.none { background: var(--amber-bg); color: var(--amber); }
+
+.txn-table-wrap {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+.txn-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.txn-table th, .txn-table td { text-align: left; padding: 10px 16px; white-space: nowrap; }
+.txn-table thead th {
+  color: var(--text-dim); font-weight: 600; font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--card-border);
+}
+.txn-table tbody tr:not(:last-child) td { border-bottom: 1px solid var(--card-border); }
+.txn-table td.device { font-family: "Cascadia Code", "Consolas", monospace; }
+
+.empty-hint { color: var(--text-dim); font-size: 0.85rem; }
+.empty-hint code {
+  background: var(--bg-alt); padding: 1px 6px; border-radius: 4px;
+}

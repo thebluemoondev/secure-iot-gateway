@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Secure IoT Gateway — Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page">
+    <header class="page-header">
+      <div class="brand">
+        <span class="brand-icon">🛰️</span>
+        <div>
+          <h1>Secure IoT Gateway</h1>
+          <p class="subtitle">Đề tài 10 — Giám sát ra vào bảo mật qua Cloud (AES-GCM · RSA · SHA-512)</p>
+        </div>
+      </div>
+      <div class="live-indicator" id="live-indicator">
+        <span class="dot"></span> Đang cập nhật trực tiếp
+      </div>
+    </header>
+
+    <section class="stats-row" id="stats-row">
+      <!-- điền bằng JS -->
+    </section>
+
+    <section class="section">
+      <h2>Thiết bị</h2>
+      <div class="device-grid" id="device-grid">
+        <p class="empty-hint">Chưa có thiết bị nào đăng ký. Chạy <code>tools/generate_keys.py</code> trước.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Giao dịch gần đây</h2>
+      <div class="txn-table-wrap">
+        <table class="txn-table">
+          <thead>
+            <tr><th>Thời gian</th><th>Thiết bị</th><th>Trạng thái</th><th>Lý do</th></tr>
+          </thead>
+          <tbody id="txn-body">
+            <tr><td colspan="4" class="empty-hint">Chưa có giao dịch nào.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# Khoá riêng — KHÔNG commit
+cloud_server/keys/*.pem
+cloud_server/keys/devices/*.pem
+iot/include/device_keys.h
+
+# Dữ liệu sinh ra khi chạy
+data/samples/*.txt
+data/logs/*.log
+data/logs/*.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# PlatformIO
+iot/.pio/
+iot/.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+tests/_tmp/
